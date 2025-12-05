@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>登入 / 註冊</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(180deg, #FFF7D6, #FFFAD0);
+            font-family: "MyGameFont", "Microsoft JhengHei";
+            color: #6b4f3a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+
+            overflow-x: hidden; /* 不顯示水平滾動 */
+        }
+
+        /* 導覽列 */
+        .navbar {
+            display: flex;
+            justify-content: flex-end;
+            background-color: #d4a373;
+            padding: 15px 30px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .navbar a {
+            color: #fff;
+            text-decoration: none;
+            margin-left: 30px;
+            font-size: 24px;
+            transition: 0.3s;
+        }
+
+        .navbar a:hover {
+            text-shadow: 0 0 5px rgba(0,0,0,0.3);
+        }
+        
+        .container {
+            background: #fff8e5;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            width: 350px;
+            text-align: center;
+            
+            /* ⭐ 關鍵：水平居中 (模仿 change_password.html 的 form) ⭐ */
+            margin: 0 auto; 
+        }
+
+        h1 { margin-bottom: 20px; }
+
+        input {
+            width: 80%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid #d4a373;
+            font-size: 16px;
+        }
+
+        button {
+            width: 85%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: none;
+            background-color: #d4a373;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #b7793f;
+        }
+
+        .switch-btn {
+            background: none;
+            border: none;
+            color: #d4a373;
+            cursor: pointer;
+            text-decoration: underline;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/home">每日小任務</a>
+        <a href="/profile">個人資料</a>
+        <a href="/diary">福寶日誌</a>
+    </nav>
+
+<h2 style="text-align:center;"></h2>
+
+    <div class="container">
+        <h1 id="formTitle">登入</h1>
+
+        <!-- 登入表單 -->
+        <form id="loginForm" action="/login" method="POST">
+            <input type="text" name="username" placeholder="帳號" required><br>
+            <input type="password" name="password" placeholder="密碼" required><br>
+            <button type="submit">登入</button>
+        </form>
+
+        <!-- 註冊表單（初始隱藏） -->
+        <form id="registerForm" action="/register" method="POST" style="display:none;">
+            <input type="text" name="username" placeholder="帳號" required><br>
+            <input type="password" name="password" placeholder="密碼" required><br>
+            <button type="submit">註冊</button>
+        </form>
+
+        <br>
+        <button class="switch-btn" id="switchBtn">還沒帳號？註冊</button>
+    </div>
+
+    <script>
+        const loginForm = document.getElementById("loginForm");
+        const registerForm = document.getElementById("registerForm");
+        const switchBtn = document.getElementById("switchBtn");
+        const formTitle = document.getElementById("formTitle");
+
+        let isLogin = true;
+
+        switchBtn.addEventListener("click", () => {
+            if (isLogin) {
+                // 切到註冊
+                loginForm.style.display = "none";
+                registerForm.style.display = "block";
+                formTitle.innerText = "註冊";
+                switchBtn.innerText = "已經有帳號？登入";
+            } else {
+                // 切到登入
+                loginForm.style.display = "block";
+                registerForm.style.display = "none";
+                formTitle.innerText = "登入";
+                switchBtn.innerText = "還沒帳號？註冊";
+            }
+            isLogin = !isLogin;
+        });
+
+                // 提示登入錯誤
+        loginForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+            const username = loginForm.username.value;
+            const password = loginForm.password.value;
+
+            fetch("/login", {
+                method: "POST",
+                body: new URLSearchParams({username, password})
+            }).then(res => res.text()).then(text => {
+                if (text.includes("帳號不存在") || text.includes("錯誤")) {
+                    alert(text);
+                } else {
+                    // 登入成功跳 home
+                    window.location.href = "/home";
+                }
+            });
+        });
+
+        // ⭐ 新增：處理註冊表單的提交事件 ⭐
+        registerForm.addEventListener("submit", (e) => {
+            e.preventDefault(); // 阻止表單預設提交行為
+            const username = registerForm.username.value;
+            const password = registerForm.password.value;
+
+            fetch("/register", {
+                method: "POST",
+                body: new URLSearchParams({username, password})
+            }).then(res => res.text()).then(text => { 
+                // 檢查回傳的文字
+                if (text.includes("帳號已存在！")) {
+                    alert(text); // 彈出「帳號已存在！」提示框
+                } else if (text.includes("註冊成功")) {
+                    // ⭐ 註冊成功：提示後跳轉回 login 頁面 ⭐
+                    alert("註冊成功，請重新登入！"); 
+                    window.location.href = "/login"; // 導向登入頁
+                } else {
+                    // 這是最不可能發生的情況，用於捕獲非預期的錯誤
+                    alert("註冊失敗，請檢查網路或輸入的帳號/密碼。");
+                }
+            });
+        });
+
+    </script>
+</body>
+</html>

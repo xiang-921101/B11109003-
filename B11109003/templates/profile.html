@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>個人資料</title>
+<style>
+    @font-face {
+        font-family: "MyGameFont";
+        src: url("{{ url_for('static', filename='fonts/myfont.ttf') }}");
+    }
+    
+    body {
+        font-family: "MyGameFont", "Microsoft JhengHei";
+        background: #FFF7D6;
+        margin: 0;
+        padding: 0;
+        color: #6b4f3a;
+    }
+
+    .navbar {
+        display: flex;
+        justify-content: flex-end;
+        background-color: #d4a373;
+        padding: 15px 30px; /* 右側間隔 30px (保持不變) */
+        width: 100%;
+        box-sizing: border-box; /* ⭐ 新增：確保寬度計算正確 ⭐ */
+    }
+    .navbar a {
+        color: #fff;
+        text-decoration: none;
+        margin-left: 30px;
+        font-size: 24px;
+        transition: 0.3s; /* ⭐ 新增：過渡效果 ⭐ */
+    }
+    .navbar a:hover { /* ⭐ 新增：hover 效果 ⭐ */
+        text-shadow: 0 0 5px rgba(0,0,0,0.3);
+    }
+
+    .container {
+        display: flex;
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 20px;
+        gap: 20px;
+    }
+
+    /* 左欄 */
+    .profile-left {
+        width: 300px;
+        background-color: #fff8e5;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+
+    .avatar {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-bottom: 20px;
+        border: 3px solid #d4a373;
+        cursor: pointer;
+    }
+
+    .profile-left h2, .profile-left p {
+        margin: 10px 0;
+    }
+
+    .profile-left button, .profile-left a {
+        display: block;
+        width: 80%;
+        padding: 10px;
+        margin: 10px auto;
+        border-radius: 8px;
+        border: 2px solid #d4a373;
+        background-color: #d4a373;
+        color: #fff;
+        cursor: pointer;
+        font-size: 16px;
+        text-decoration: none;
+        text-align: center;
+    }
+
+    .profile-left button:hover, .profile-left a:hover {
+        background-color: #b7793f;
+        border-color: #b7793f;
+    }
+
+    /* 右欄 */
+    .profile-right {
+        flex: 1;
+        background-color: #fff8e5;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    .history-btn {
+        width: 100%;
+        text-align: left;
+        padding: 10px;
+        margin: 5px 0;
+        background-color: #d4a373;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+    #entryDetail {
+        display: none;
+        margin-top: 20px;
+        padding: 15px;
+        border: 1px solid #d4a373;
+        border-radius: 8px;
+        background-color: #fff8e5;
+    }
+
+    #entryDetail img {
+        width: 150px;
+        margin: 5px;
+    }
+</style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="/home">每日小任務</a>
+        <a href="/profile">個人資料</a>
+        <a href="/diary">福寶日誌</a>
+    </nav>
+
+{% if not is_logged_in %}
+    <div style="text-align:center; margin-top:50px;">
+        <p style="font-size:24px;">請先登入</p>
+        <a href="/login" style="font-size:20px; color:#6b4f3a; text-decoration:underline;">前往登入</a>
+    </div>
+{% else %}
+<div class="container">
+    <!-- 左欄 -->
+    <div class="profile-left">
+        <form id="avatarForm" action="/update_avatar" method="POST" enctype="multipart/form-data">
+            <input type="file" id="avatarInput" name="avatar" accept="image/*" style="display:none;">
+            {% set av = avatar_url or 'default_avatar.png' %}
+            <img id="avatarImg" class="avatar" src="{{ url_for('static', filename=av) }}" alt="Avatar">
+        </form>
+
+        <h2>{{ display_nickname }}</h2>
+
+        {% if formal_account_name %}
+            <p style="font-size:14px; margin: 0 0 10px 0;">帳號: {{ formal_account_name }}</p>
+        {% endif %}
+
+        {% if is_logged_in %}
+        <form id="nicknameForm" action="/change_nickname" method="POST">
+            <input type="text" id="nicknameInput" name="nickname" placeholder="輸入新暱稱" value="{{ display_nickname }}" style="display:none; width:80%; padding:10px; margin:10px auto; border-radius:8px; border:2px solid #d4a373; font-size:16px;">
+            <button type="button" id="editNicknameBtn" style="width:80%; margin:10px auto; display: block;">更改暱稱</button>
+            <button type="submit" id="saveNicknameBtn" style="display:none; width:80%; margin:10px auto;">儲存新暱稱</button>
+        </form>
+        {% endif %}
+
+        <button onclick="location.href='/logout'">登出</button>
+        <button onclick="location.href='/change_password'">更改密碼</button>
+    </div>
+
+    <!-- 右欄 -->
+    <div class="profile-right">
+        <h2>歷史紀錄</h2>
+        {% if history and history|length > 0 %}
+            {% for item in history %}
+                <button class="history-btn" onclick="showEntry({{ loop.index0 }})">
+                    {{ item.task or item.text|truncate(20) }} — {{ item.date }}
+                </button>
+            {% endfor %}
+        {% else %}
+            <p>你還沒有任何歷史紀錄</p>
+        {% endif %}
+
+        <div id="entryDetail">
+            <h3 id="entryTitle"></h3>
+            <p id="entryDate"></p>
+            <div id="entryPhotos"></div>
+            <p id="entryText"></p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 點擊頭像上傳
+    document.getElementById('avatarImg').addEventListener('click', () => {
+        document.getElementById('avatarInput').click();
+    });
+
+    document.getElementById('avatarInput').addEventListener('change', () => {
+        document.getElementById('avatarForm').submit();
+    });
+
+    // history 資料由 Jinja 注入
+    const historyData = {{ history|tojson }};
+    const entryDetail = document.getElementById('entryDetail');
+    
+    function showEntry(index) {
+        const e = historyData[index];
+        const clickedButton = document.querySelectorAll('.history-btn')[index]; // 1. 取得被點擊的按鈕元素
+
+        // 2. 更新詳細資訊的內容 (與原本邏輯相同)
+        document.getElementById('entryTitle').innerText = e.task || '';
+        document.getElementById('entryDate').innerText = e.date || '';
+        const photosDiv = document.getElementById('entryPhotos');
+        photosDiv.innerHTML = '';
+        
+        const imgs = e.photo || e.photos || (e.image ? [e.image] : []);
+        if (imgs && imgs.length) {
+            imgs.forEach(p => {
+                let src = p;
+                if (src.startsWith('/')) {
+                    // 絕對路徑，直接用
+                } else if (src.startsWith('uploads/') || src.startsWith('static/uploads/')) {
+                    src = '/static/' + src.replace(/^static\//, '');
+                } else {
+                    // 預設放在 static/
+                    src = '/static/' + p;
+                }
+                const img = document.createElement('img');
+                img.src = src;
+                photosDiv.appendChild(img);
+            });
+        }
+        document.getElementById('entryText').innerText = e.text || '';
+        
+        // 3. 關鍵：將 #entryDetail 移動到被點擊按鈕的下方
+        clickedButton.parentNode.insertBefore(entryDetail, clickedButton.nextSibling);
+        
+        // 4. 顯示 #entryDetail
+        entryDetail.style.display = 'block';
+        
+        // 5. 滾動到詳細資訊的位置
+        entryDetail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // 暱稱更改邏輯 (僅限正式登入用戶)
+    const editNicknameBtn = document.getElementById('editNicknameBtn');
+    const saveNicknameBtn = document.getElementById('saveNicknameBtn');
+    const nicknameInput = document.getElementById('nicknameInput');
+    const nicknameForm = document.getElementById('nicknameForm');
+    const profileLeftH2 = document.querySelector('.profile-left h2'); 
+
+    if (editNicknameBtn && saveNicknameBtn && nicknameInput && nicknameForm) {
+        
+        // ⭐ 診斷點 A: 點擊「更改暱稱」按鈕的事件 ⭐
+        editNicknameBtn.addEventListener('click', () => {
+            editNicknameBtn.style.display = 'none';
+            nicknameInput.style.display = 'block';
+            saveNicknameBtn.style.display = 'block';
+            nicknameInput.focus();
+        });
+
+        // ⭐ 診斷點 B: 提交表單的事件 (fetch 請求) ⭐
+        nicknameForm.addEventListener('submit', (e) => {
+            e.preventDefault(); // 阻止表單預設提交
+            const newNickname = nicknameInput.value.trim();
+            if (!newNickname) {
+                alert("暱稱不能為空");
+                return;
+            }
+
+            fetch('/change_nickname', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: `nickname=${encodeURIComponent(newNickname)}`
+            })
+            .then(res => res.text())
+            .then(text => {
+                if (text.includes("成功")) {
+                    alert(text);
+                    // 成功後更新畫面
+                    profileLeftH2.innerText = newNickname; 
+                    nicknameInput.value = newNickname; 
+                    
+                    // 切換回編輯按鈕狀態
+                    editNicknameBtn.style.display = 'block';
+                    nicknameInput.style.display = 'none';
+                    saveNicknameBtn.style.display = 'none';
+                } else {
+                    alert(text); // 顯示後端返回的錯誤訊息（例如「請先登入正式帳號」）
+                }
+            })
+            .catch(error => alert('更改失敗。'));
+        });
+    }
+</script>
+{% endif %}
+
+</body>
+</html>

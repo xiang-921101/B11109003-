@@ -1,0 +1,19 @@
+body {
+    font-family: "Microsoft JhengHei";
+    padding: 20px;
+}
+
+#skipBtn {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+}
+
+.navbar a {
+    margin-right: 20px;
+}
+
+#textBox p {
+    font-size: 20px;
+    margin: 8px 0;
+}

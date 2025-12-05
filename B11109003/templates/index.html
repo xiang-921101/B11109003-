@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>福寶的故事</title>
+
+    <style>
+        .fadeText {
+            animation: fadeInOut 4s forwards;
+        }
+
+        @font-face {
+            font-family: "MyGameFont";
+            src: url("{{ url_for('static', filename='fonts/myfont.ttf') }}");
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            background: linear-gradient(180deg, #FFF7D6, #FFFAD0);
+            font-family: "MyGameFont", "Microsoft JhengHei";
+        }
+
+        #textBox {
+            font-size: 96px;
+            color: #6b4f3a;
+            text-align: center;
+            min-height: 150px;
+            width: 80%;
+            line-height: 1.2;
+        }
+
+        #SkipBtn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            background-color: #d4a373;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-family: "MyGameFont", "Microsoft JhengHei";
+        }
+        #SkipBtn:hover {
+            background-color: #b7793f;
+        }
+
+        /* 淡入動畫 */
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        .fadeIn {
+            animation: fadeIn 1s forwards;
+        }
+
+
+        #choices, #nameForm {
+            margin-top: 30px;
+            font-size: 32px;
+            text-align: center;
+            font-family: "MyGameFont", "Microsoft JhengHei";
+            color: #6b4f3a;
+            opacity: 0; /* 初始隱藏 */
+        }
+
+        .choice-inline {
+            margin: 0 25px;
+            cursor: pointer;
+            user-select: none;
+            font-family: "MyGameFont", "Microsoft JhengHei";
+            color: #6b4f3a;
+        }
+
+        #choices div {
+            cursor: pointer;
+            user-select: none;
+            font-family: "MyGameFont", "Microsoft JhengHei";
+            color: #6b4f3a;
+            margin-top: 15px;
+        }
+
+        /* 名字輸入區置中 */
+        #nameForm {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        #nameForm p {
+            font-size: 40px;
+            font-family: "MyGameFont", "Microsoft JhengHei";
+            color: #6b4f3a;
+            margin-bottom: 15px;
+        }
+
+        #nameForm input {
+            font-size: 28px;
+            padding: 8px 12px;
+            border-radius: 12px;
+            border: 2px solid #d4a373;
+            margin-bottom: 15px;
+        }
+
+        #nameForm button {
+            font-size: 28px;
+            padding: 8px 16px;
+            border-radius: 12px;
+            border: 2px solid #d4a373;
+            background-color: #d4a373;
+            color: #fff;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        #nameForm button:hover {
+            background-color: #b7793f;
+            border-color: #b7793f;
+        }
+    </style>
+
+
+    <script>
+        const phase1_lines = [
+            "嘿，你好呀~ 我是福寶",
+            "我從出生就在這裡了",
+            "從來都沒看過外面的世界",
+            "因此我好好奇呀！",
+            "你願意幫幫我嗎？"
+        ];
+
+        let phase3_lines = [];
+
+        function fadeInElement(el) {
+            el.style.opacity = 0;
+            el.style.display = "inline-block";
+            setTimeout(() => {
+                el.classList.add("fadeIn");
+            }, 50);
+        }
+
+        function playPhase1(i) {
+            const box = document.getElementById("textBox");
+
+            if (i < phase1_lines.length) {
+                box.textContent = phase1_lines[i];
+                box.classList.remove("fadeIn");
+                void box.offsetWidth;
+                box.classList.add("fadeIn");
+
+                if (i === phase1_lines.length - 1) {
+                    // 最後一行文字停留，4秒後顯示勾選框
+                    setTimeout(() => {
+                        const choices = document.getElementById("choices");
+                        choices.style.display = "block";
+                        fadeInChoices();
+                    }, 4000);
+                } else {
+                    // 下一行文字
+                    setTimeout(() => {
+                        playPhase1(i + 1);
+                    }, 5000); // 文字 4s + 空白 1s
+                }
+            }
+        }
+
+        function fadeInChoices() {
+            const choicesContainer = document.getElementById("choices");
+            choicesContainer.style.opacity = 1; // 先讓整個容器可見
+
+            const choices = document.querySelectorAll("#choices .choice-inline, #choices div");
+            choices.forEach((el, idx) => {
+                el.style.opacity = 0;
+                setTimeout(() => {
+                    el.classList.add("fadeIn");
+                }, idx * 200);
+            });
+        }
+
+
+        function choose(v) {
+            const box = document.getElementById("textBox");
+            document.getElementById("choices").style.display = "none";
+
+            if (v === "ok") {
+                box.textContent = "真的嗎！ 太好了 謝謝你！";
+            } else {
+                box.textContent = "哈哈哈 對阿 所以你只能幫我！";
+            }
+
+            box.classList.remove("fadeIn");
+            void box.offsetWidth;
+            box.classList.add("fadeIn");
+
+            setTimeout(() => {
+                box.textContent = "";
+                const form = document.getElementById("nameForm");
+                form.style.display = "flex";
+                form.classList.add("fadeIn");
+            }, 4000);
+        }
+
+        function startPhase3() {
+            const nameInput = document.getElementById("usernameInput").value || "好心人";
+            phase3_lines = [
+                `${nameInput}嗎！？ 你好！`,
+                "那接下來就麻煩你啦！",
+                "從今天開始",
+                "我每天都會跟你提一個小小的要求",
+                "希望你可以利用照片與文字",
+                "讓我看看這美麗的世界！"
+            ];
+
+            document.getElementById("nameForm").style.display = "none";
+            playPhase3(0, nameInput);
+        }
+
+        function playPhase3(i, name) {
+            const box = document.getElementById("textBox");
+
+            if (i < phase3_lines.length) {
+                // 先清空文字
+                box.textContent = "";
+                box.classList.remove("fadeIn");
+                void box.offsetWidth;
+
+                // 延遲 50ms 加文字 + 淡入
+                setTimeout(() => {
+                    box.textContent = phase3_lines[i];
+                    box.classList.add("fadeIn");
+                }, 50);
+
+                // 4秒顯示文字，然後清空 1 秒空白，再顯示下一行
+                setTimeout(() => {
+                    box.textContent = "";
+                    setTimeout(() => {
+                        playPhase3(i + 1, name);
+                    }, 1000); // 空白 1 秒
+                }, 4000); // 文字顯示 4 秒
+            } else {
+                setTimeout(() => {
+                    window.location.href = "/home?username=" + name;
+                }, 200);
+            }
+        }
+
+        window.onload = function() {
+            playPhase1(0);
+        };
+
+        function skip() {
+            // ⭐ 關鍵：使用表單提交到 / 路由，讓後端處理帳號建立 ⭐
+            const skipForm = document.createElement('form');
+            skipForm.method = 'POST';
+            skipForm.action = '/';
+
+            // 模擬提交 username=好心人
+            const nameInput = document.createElement('input');
+            nameInput.type = 'hidden';
+            nameInput.name = 'username';
+            nameInput.value = '好心人'; // 預設名稱
+
+            skipForm.appendChild(nameInput);
+            document.body.appendChild(skipForm);
+            skipForm.submit(); // 提交到 / 路由，觸發 app.py 的 index() 邏輯
+        }
+        </script>
+
+</head>
+
+<body>
+    <button id="SkipBtn" onclick="skip()">Skip</button>
+
+    <div id="textBox"></div>
+
+    <div id="choices" style="display:none;">
+        <span class="choice-inline" onclick="choose('ok')">□ 願意</span>
+        <span class="choice-inline" onclick="choose('ok')">□ 好</span>
+        <br><br>
+        <div onclick="choose('funny')">□ 這兩個選項不是都一樣嗎！！</div>
+    </div>
+
+    <div id="nameForm" style="display:none;">
+        <p>對了！我可以先知道你的名字嗎？</p>
+        <input id="usernameInput" type="text">
+        <button onclick="startPhase3()">確認</button>
+    </div>
+</body>
+</html>
